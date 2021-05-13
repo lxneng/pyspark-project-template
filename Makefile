@@ -13,6 +13,9 @@ default: clean build
 deps: .venv
 	. .venv/bin/activate && pip install -U -r requirements.txt -t ./src/libs
 
+deps2:
+	pip install -U -r requirements.txt -t ./src/libs
+
 clean: clean-build clean-pyc clean-test
 
 clean-build:
@@ -32,6 +35,8 @@ clean-test:
 build: clean
 	mkdir ./dist
 	cp ./src/main.py ./dist
+	cp ./src/config.yml ./dist
 	cd ./src && zip -x main.py -x \*libs\* -r ../dist/jobs.zip .
 	cd ./src && if [ -d libs ] ; then cd libs && zip -r ../../dist/libs.zip . ; fi
-
+upload:
+	hdfscli upload -f dist pyspk-demo

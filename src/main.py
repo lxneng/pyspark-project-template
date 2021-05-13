@@ -4,6 +4,23 @@ import time
 import os
 import sys
 import logging
+from yaml import load
+
+try:
+    from yaml import CLoader as Loader
+except ImportError:
+    from yaml import Loader
+
+if os.path.exists('libs.zip'):
+    sys.path.insert(0, 'libs.zip')
+else:
+    sys.path.insert(0, './libs')
+
+if os.path.exists('jobs.zip'):
+    sys.path.insert(0, 'jobs.zip')
+else:
+    sys.path.insert(0, './jobs')
+
 try:
     import pyspark
 except:
@@ -12,10 +29,18 @@ except:
     import pyspark
 
 
+
+
 logging.basicConfig(
     level='INFO',
     format='%(asctime)s %(levelname)-5.5s [%(name)s] %(message)s')
 log = logging.getLogger('pyspk-jobs')
+
+
+def load_config(fp):
+    with open(fp, 'r') as f:
+        data = load(f, Loader=Loader)
+    return data
 
 
 if __name__ == '__main__':
@@ -28,10 +53,20 @@ if __name__ == '__main__':
     parser.add_argument('--job-args',
                         nargs='*',
                         help="Extra arguments to send to the PySpark job (example: --job-args template=manual-email1 foo=bar")
+    parser.add_argument('--config',
+                        type=str,
+                        default=os.path.join(os.path.dirname(__file__), "config.yml"),
+                        help="config file")
+    parser.add_argument('--env',
+                        type=str,
+                        default="development",
+                        help="environment")
     args = parser.parse_args()
     log.info("Called with arguments: {}".format(args))
 
     job_args = dict()
+    config = load_config(args.config).get(args.env)
+    log.info(config)
 
     if args.job_args:
         job_args_tuples = [arg_str.split('=') for arg_str in args.job_args]
@@ -46,7 +81,7 @@ if __name__ == '__main__':
     job_module = importlib.import_module('jobs.%s' % args.job_name)
 
     start = time.time()
-    res = job_module.run(spark, **job_args)
+    res = job_module.run(spark, config, **job_args)
     spark.stop()
     end = time.time()
     took_s = end - start

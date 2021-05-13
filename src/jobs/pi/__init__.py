@@ -11,7 +11,7 @@ def f(_):
     return 1 if x ** 2 + y ** 2 <= 1 else 0
 
 
-def run(spark, **kwargs):
+def run(spark, *args, **kwargs):
     partitions = int(kwargs.get('partitions', 4))
     number_of_steps = partitions * NUMBER_OF_STEPS_FACTOR
     count = spark.sparkContext\
